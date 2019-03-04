@@ -1,9 +1,25 @@
 import discord
 import json
+import re
 
 
 startup = True
 client = discord.Client()
+
+stand_names = None
+stylized_stand_names = []
+
+with open('standnames.txt', 'r') as read_file:
+    stand_names = read_file.readlines()
+    stand_names = [i[:-1] for i in stand_names]
+
+for i in stand_names:
+    stylized_stand_name = "「"
+    for j in i:
+        stylized_stand_name += j + " "
+    stylized_stand_name = stylized_stand_name[:-1]
+    stylized_stand_name += "」"
+    stylized_stand_names.append(stylized_stand_name)
 
 with open('config.json', 'r') as read_file:
     config = json.load(read_file)
@@ -17,7 +33,18 @@ class Commands:
     
     @staticmethod
     async def general(message):
-        pass
+        
+        global client
+
+        content = message.content
+
+        for stand_name, stylized_stand_name in zip(stand_names, stylized_stand_names):
+            content = re.sub(stand_name, stylized_stand_name, content, flags=re.IGNORECASE)
+        
+        print(dir(message))
+
+        if content != message.content:
+            await message.channel.send(content)
 
 
 @client.event
@@ -43,7 +70,7 @@ async def on_message(message):
             await message.channel.send("'" + command + "' is not a command" +
                                        ", use 'help' to get a list of commands")
     else:
-        Commands.general(message)
+        await Commands.general(message)
 
 if __name__ == "__main__":
     client.run(config['token'])
